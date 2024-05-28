@@ -1,0 +1,8 @@
+Problem 2:
+a)
+i) this will help in having a more smouth values for the updates since now we are not only taking the current gradient
+We are also weighing it against all the previous grandients and thus the movement is much smouther.
+ii) by dividing by the magnitude, parameters with smaller gradients will get bigger updates and thus it will help in preventing stucking.
+b)
+i) gamma will be th equal to the inverse of the expected value of d, so it should be 1/(1 - pdrop)
+ii) during training it helps in more robustness and regularization. During evaluation we want the full model capabilities.

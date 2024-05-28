@@ -1,0 +1,16 @@
+Problem 1:
+a) in the one hot encoded system, only yo is 1 and all others are zero, so the loss becomes -log(Yo)
+b) 
+i) - U(y - Yhat)
+ii) y = Yhat, thus we are predicting closely the right answers.
+iii) It reduces the loss and thus makes the prediction closer. Vc becomes closer to Uo since we want it to be similar to it.
+It is also becoming less similar to all other words since we are reducing their effects if they are being predicted.
+c)
+i) if ux == alpha uy, if alpha is positive => alpha != 1, then either ux or uy will not be normalized
+=> |ux|/|uy| = alpha and thus they cannot both be one.
+If alpha is 1, then ux will be equal to uy.
+d)
+when w = o => d/dw = Vc(Yhat o - 1)
+when w != o => d/dw = Vc (Yhat w)
+e)
+We put the above in columns, when column is o, we put first else we put others.
