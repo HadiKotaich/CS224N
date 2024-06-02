@@ -72,10 +72,17 @@ class ParserModel(nn.Module):
         ###     Dropout: https://pytorch.org/docs/stable/nn.html#dropout-layers
         ### 
         ### See the PDF for hints.
+        self.embed_to_hidden_weight = nn.Parameter(torch.Tensor(self.n_features * self.embed_size, self.hidden_size))
+        nn.init.xavier_uniform_(self.embed_to_hidden_weight)
+        self.embed_to_hidden_bias = nn.Parameter(torch.Tensor(self.hidden_size))
+        nn.init.uniform_(self.embed_to_hidden_bias)
+        
+        self.hidden_to_logits_weight = nn.Parameter(torch.Tensor(self.hidden_size, self.n_classes))
+        nn.init.xavier_uniform_(self.hidden_to_logits_weight)
+        self.hidden_to_logits_bias = nn.Parameter(torch.Tensor(self.n_classes))
+        nn.init.uniform_(self.hidden_to_logits_bias)
 
-
-
-
+        self.dropout = nn.Dropout(p = self.dropout_prob)
         ### END YOUR CODE
 
     def embedding_lookup(self, w):
@@ -106,12 +113,10 @@ class ParserModel(nn.Module):
         ###     Gather: https://pytorch.org/docs/stable/torch.html#torch.gather
         ###     View: https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
         ###     Flatten: https://pytorch.org/docs/stable/generated/torch.flatten.html
-
-
-
+        x = self.embeddings[w]
+        x = x.view(w.shape[0], self.n_features * self.embed_size)
         ### END YOUR CODE
         return x
-
 
     def forward(self, w):
         """ Run the model forward.
@@ -143,10 +148,13 @@ class ParserModel(nn.Module):
         ### Please see the following docs for support:
         ###     Matrix product: https://pytorch.org/docs/stable/torch.html#torch.matmul
         ###     ReLU: https://pytorch.org/docs/stable/nn.html?highlight=relu#torch.nn.functional.relu
-
+        w_e = self.embedding_lookup(w)
+        h = nn.ReLU()(w_e @ self.embed_to_hidden_weight + self.embed_to_hidden_bias)
+        h_d = self.dropout(h)
+        l = h_d @ self.hidden_to_logits_weight + self.hidden_to_logits_bias
 
         ### END YOUR CODE
-        return logits
+        return l
 
 
 if __name__ == "__main__":
@@ -162,6 +170,7 @@ if __name__ == "__main__":
     def check_embedding():
         inds = torch.randint(0, 100, (4, 36), dtype=torch.long)
         selected = model.embedding_lookup(inds)
+        assert selected.shape == (4, 36 * 30), "The shape is not right"
         assert np.all(selected.data.numpy() == 0), "The result of embedding lookup: " \
                                       + repr(selected) + " contains non-zero elements."
 

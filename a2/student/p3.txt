@@ -1,0 +1,10 @@
+b) an ARC reduces the size of stack by 1, a shift reduces size of buffer by 1 and increases size of stack by 1.
+in total we can do N shifts and N arcs so 2*N
+e)
+i) dh/dx = { 0 if x < 0 }, {W if x > 0}, dhi/xj = Wji
+ii) 
+dcej/dyhatj = -yj/yhatj
+dyhatj/dli = yhatj(dirac ij - yhati)
+dce/dli = SUM -yj(dirac ij - yhati) = SUM(over j) -yj diraj ij + SUM(over j) yj yhati
+= -yi (dirac ij = 1 if i == j)  + yhati * SUM yj
+= -yi + yhati (since sum yj over j is one since only 1 true label exist)
