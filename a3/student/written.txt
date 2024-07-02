@@ -1,0 +1,6 @@
+1.g)
+The masks produced by the generate_sent_masks() function are used to ensure that the attention mechanism in the step() function ignores padding tokens during the computation of attention scores. By placing 1s in positions corresponding to 'pad' tokens and 0s for non-pad tokens, these masks effectively nullify the contribution of padding tokens when attention scores are calculated. This ensures that the attention mechanism focuses only on the actual words in the input sentences, preventing the model from being influenced by irrelevant padding.
+It is necessary to use these masks because padding tokens do not carry meaningful information and should not affect the attention computation. Including them would distort the attention distribution and degrade the model's performance.
+1.i)
+Dot product attention is faster but potentially less expressive than multiplicative attention.
+Additive attention is more expressive but it is slower than multiplicative attention.
