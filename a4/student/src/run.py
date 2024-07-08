@@ -8,7 +8,10 @@ import utils
 
 import torch
 from tqdm import tqdm
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
+from models import GPT
+from trainer import Trainer, TrainerConfig
+from dataset import CharCorruptionDataset, NameDataset
 
 random.seed(0)
 
@@ -32,6 +35,8 @@ if torch.cuda.is_available():
     device = torch.cuda.current_device()
 elif torch.backends.mps.is_available() and args.variant == 'vanilla':
     device = 'mps'
+
+num_workers = 0 if device == 'cpu' else 4
 
 # TensorBoard training log
 writer = SummaryWriter(log_dir='expt/%s/%s_%s_pt_lr_%f_ft_lr_%f' % (
@@ -66,11 +71,13 @@ model = None
 if args.variant == 'vanilla':
     # TODO: [part c] Make some model here
     ### YOUR CODE HERE ###
-    pass
+    model = GPT(mconf)
     ### END YOUR CODE ###
 elif args.variant == 'rope':
     # TODO: [part g] Make some other model here
     # set mconf.rope parameter
+    mconf.rope = True
+    model = GPT(mconf)
     ### YOUR CODE HERE ###
     pass
     ### END YOUR CODE ###
@@ -81,15 +88,16 @@ print('Model on device: ', next(model.parameters()).device)
 
 # Perform pretraining, finetuning, or evaluation
 if args.function == 'pretrain':
+    assert args.pretrain_corpus_path is not None
     assert args.writing_params_path is not None
     # TODO [part f]:
     # - Given:
     #     1. A corpus specified in args.pretrain_corpus_path
+    corpus = open(args.pretrain_corpus_path, encoding='utf-8').read()
     #     2. An output path args.writing_params_path for the model parameters
     # - Goals:
     #     1. Pretrain the model on this corpus
     #     2. Save the resulting model in args.writing_params_path
-
     # - Make sure to use the following hyperparameters for pretraining:
     # Hyperparameters for pretraining:
     # max_epochs=650
@@ -102,11 +110,19 @@ if args.function == 'pretrain':
     # writer=writer
 
     ### YOUR CODE HERE ###
-    pass
+    train_dataset = CharCorruptionDataset(corpus, block_size)
+    tconf = TrainerConfig(
+        max_epochs=2, batch_size=128, learning_rate=args.finetune_lr,
+        lr_decay=True, warmup_tokens=512*20, final_tokens=650*len(pretrain_dataset)*block_size,
+        num_workers=num_workers, writer=writer)
+    trainer = Trainer(model, train_dataset , None, tconf)
+    trainer.train()
+    torch.save(model.state_dict(), args.writing_params_path)
     ### END YOUR CODE ###
 elif args.function == 'finetune':
     assert args.writing_params_path is not None
     assert args.finetune_corpus_path is not None
+    assert model is not None
     # TODO [part c] [part f]:
     # - Given:
     #     1. A finetuning corpus specified in args.finetune_corpus_path
@@ -116,8 +132,12 @@ elif args.function == 'finetune':
     # - Goals:
     #     1. If args.reading_params_path is specified, load these parameters
     #         into the model
+    if args.reading_params_path is not None:
+        model.load_state_dict(torch.load(args.reading_params_path))
     #     2. Finetune the model on this corpus
-    #     3. Save the resulting model in args.writing_params_path
+    corpus = open(args.finetune_corpus_path, encoding='utf-8').read()
+    train_dataset = NameDataset(pretrain_dataset, corpus)
+
     # - Make sure to use the following hyperparameters:
     #     [part d] Hyperparameters for finetuning WITHOUT a pretrained model:
     #         max_epochs=75
@@ -139,10 +159,15 @@ elif args.function == 'finetune':
     #         writer=writer
     #     You can use the args.reading_params_path flag to switch between the
     #     number of epochs for each case.
-
-    ### YOUR CODE HERE ###
-    pass
-    ### END YOUR CODE ###
+    max_epochs = 75 if args.reading_params_path is None else 10
+    tconf = TrainerConfig(
+        max_epochs=2, batch_size=256, learning_rate=args.finetune_lr,
+        lr_decay=True, warmup_tokens=512*20, final_tokens=200*len(train_dataset)*block_size,
+        num_workers=num_workers, writer=writer)
+    trainer = Trainer(model, train_dataset , None, tconf)
+    trainer.train()
+    #     3. Save the resulting model in args.writing_params_path
+    torch.save(model.state_dict(), args.writing_params_path)
 elif args.function == 'evaluate':
     assert args.outputs_path is not None
     assert args.reading_params_path is not None

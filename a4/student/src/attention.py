@@ -38,7 +38,7 @@ def precompute_rotary_emb(dim, max_positions):
     rope_cache = None
     # TODO: [part g]
     ### YOUR CODE HERE ###
-    pass
+    rope_cache = torch.tensor([[[math.cos(t * (1/10000^(-2 * (i-1)/dim))), math.sin(t *(1/10000^(-2*(i-1)/dim)))] for i in range(dim//2)] for t in range(max_positions)])
     ### END YOUR CODE ###
     return rope_cache
 
@@ -56,10 +56,9 @@ def apply_rotary_emb(x, rope_cache):
     # from the length of the precomputed values. In this case, you should use
     # truncate the precomputed values to match the length of the sequence.
 
-    rotated_x = None
-    ### YOUR CODE HERE ###
-    pass
-    ### END YOUR CODE ###
+    rope_cache = rope_cache[:x.shape(0), :, :]
+    rotated_x_complex = torch.view_as_complex(rope_cache) * torch.view_as_complex(x.view(x.shape(1)//2, 2))
+    rotated_x = torch.view_as_real(rotated_x_complex)
     return rotated_x
 
 class CausalSelfAttention(nn.Module):

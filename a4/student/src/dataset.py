@@ -101,8 +101,50 @@ class CharCorruptionDataset(Dataset):
     def __getitem__(self, idx):
         # TODO [part e]: see spec above
         ### YOUR CODE HERE ###
-        pass
+        document = self.data[idx]
+        mn_size = 4
+        mx_size = int(self.block_size*7/8)
+        random_size = random.randrange(mn_size, mx_size + 1)
+        document_truncated = document[:random_size]
+
+        quarter_trucanted_size = len(document_truncated) // 4
+        quarter_trucanted_size_left = (quarter_trucanted_size - 1) // 2
+        quarter_trucanted_size_right = ((quarter_trucanted_size - 1) * 3) // 2
+        masked_content_length = 1 + random.randrange(quarter_trucanted_size_left, quarter_trucanted_size_right) if quarter_trucanted_size_right > 0 else 0
+        remaining_length = len(document_truncated) - masked_content_length
+        prefix_length = random.randrange(1, remaining_length)
+        prefix = document_truncated[:prefix_length]
+        masked_content = document_truncated[prefix_length: prefix_length + masked_content_length]
+        suffix = document_truncated[prefix_length + masked_content_length:]
+# 3. Rearrange these substrings into the following form:
+#
+#     [prefix] MASK_CHAR [suffix] MASK_CHAR [masked_content] [pads]
+#
+#   This resulting string, denoted masked_string, serves as the output example.
+#   Here MASK_CHAR is the masking character and [pads] is a string of repeated
+#     PAD_CHAR characters chosen so that the entire string is of length
+#     self.block_size + 1.
+#   Intuitively, the string [masked_content] is removed from the document and
+#     replaced with MASK_CHAR. After the suffix of the string, MASK_CHAR is seen
+#     again, followed by the removed content, and the padding characters.
+        masked_string = prefix + self.MASK_CHAR + suffix + self.MASK_CHAR + masked_content
+        rem_len = self.block_size + 1 - len(masked_string)
+        masked_string = masked_string + "".join([self.PAD_CHAR] * rem_len)
+
+
+# 4. We now use masked_string to construct the input and output example pair. To
+#    do so, simply take the input string to be masked_string[:-1], and the output
+#    string to be masked_string[1:]. In other words, for each character, the goal
+#    is to predict the next character in the masked string.
+        x = masked_string[:-1]
+        y = masked_string[1:]
+# 5. Making use of the vocabulary that you defined, encode the resulting input
+#    and output strings as Long tensors and return the resulting data point.  
+        
+        x = torch.tensor([self.stoi[c] for c in x], dtype=torch.long)
+        y = torch.tensor([self.stoi[c] for c in y], dtype=torch.long)
         ### END YOUR CODE ###
+        return x, y
 
 
 # The input-output pairs (x, y) of the NameDataset are of the following form:
