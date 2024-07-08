@@ -6,15 +6,18 @@
 
 import argparse
 import utils
+from tqdm import tqdm
 
 def main():
     accuracy = 0.0
-
-    # Compute accuracy in the range [0.0, 100.0]
-    ### YOUR CODE HERE ###
-    pass
-    ### END YOUR CODE ###
-
+    argp = argparse.ArgumentParser()
+    argp.add_argument('--eval_corpus_path', default=None)
+    args = argp.parse_args()
+    predictions = []
+    for _ in tqdm(open(args.eval_corpus_path, encoding='utf-8')):
+        predictions.append('London')
+    total, correct = utils.evaluate_places(args.eval_corpus_path, predictions)
+    accuracy = (correct / total) * 100
     return accuracy
 
 if __name__ == '__main__':
